@@ -1,46 +1,161 @@
 package com.jennycgt.androidVAD
 
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.widget.ImageButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Divider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.paint
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.jennycgt.androidVAD.ui.theme.VADAndroidTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            VADAndroidTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
+                Column(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Top
                 ) {
-                    Greeting("Android")
+                    HomeScreen("VAD Android ")
                 }
-            }
+
         }
     }
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
+fun HomeScreen(name: String, modifier: Modifier = Modifier) {
+    Box(modifier = Modifier.fillMaxWidth()
+//        .paint(
+//            painterResource(id = R.drawable.android),
+//        ),
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.android),
+            contentDescription = "Content",
+            contentScale = ContentScale.FillWidth,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    Spacer(modifier = Modifier.height(10.dp))
     Text(
-        text = "Hello $name!",
-        modifier = modifier
+        text = "$name!",
+        modifier = modifier,
+        fontSize = 25.sp
     )
+    var isRecording by remember {mutableStateOf(false)}
+    var isPlaying by remember {mutableStateOf(false)}
+    var vadText by remember {mutableStateOf("")}
+
+    Spacer(modifier = Modifier.height(20.dp))
+    ButtonIcon(state = isRecording, onclick = {if(!isPlaying){isRecording = !it}},
+        resource1 = R.drawable.baseline_fiber_manual_record_24,
+        resource2 = R.drawable.baseline_stop_circle_24,
+        text1 = "Click to start Recording", text2 = "Recording ...")
+
+    Text(
+        text = "$vadText!",
+        modifier = modifier,
+        fontSize = 20.sp
+    )
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Divider(thickness = 5.dp, color = Color.Green)
+    Spacer(modifier = Modifier.height(20.dp))
+    ButtonIcon(state = isPlaying, onclick = { if(!isRecording){isPlaying = !it}},
+        resource1 = R.drawable.baseline_play_circle_filled_24,
+        resource2 = R.drawable.baseline_stop_circle_24,
+        text1 = "Click to play", text2 = "Playing ...")
+
+}
+
+@Composable
+fun ButtonIcon(
+    state: Boolean,
+    onclick:(state: Boolean)->Unit,
+    resource1: Int ,
+    resource2: Int ,
+    text1 :String ,
+    text2 : String
+) {
+    var iconRecord: Painter
+    var iconColor: ColorFilter
+    var textAction:String = if (!state) text1 else text2
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = textAction,
+                fontSize = 15.sp
+            )
+
+            IconButton(
+                onClick = {
+                    onclick(state)
+                },
+                modifier = Modifier.size(100.dp),
+
+            ) {
+                iconRecord = if (!state) {
+                    painterResource(id = resource1)
+                } else {
+                    painterResource(id = resource2)
+                }
+                iconColor = if(!state) ColorFilter.tint(Color.Black) else ColorFilter.tint(Color.Red)
+
+                Image(
+                    modifier = Modifier.size(100.dp),
+                    painter = iconRecord, contentDescription = "Image",
+                    contentScale = ContentScale.FillWidth,
+                    colorFilter = iconColor
+                )
+
+            }
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     VADAndroidTheme {
-        Greeting("Android")
+        HomeScreen("Android")
     }
 }
