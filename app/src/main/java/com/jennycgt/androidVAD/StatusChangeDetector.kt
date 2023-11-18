@@ -1,10 +1,10 @@
-package com.jrtec.grabadora
+package com.jennycgt.androidVAD
 
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 
-class StatusChangeDetector(private val onChangeTimeout: Long = 10000,
+class StatusChangeDetector(private val onChangeTimeout: Long = 3000,
                            private val callback: () -> Unit) {
     private val handler = Handler(Looper.getMainLooper())
     private var lastValue: String? = null
@@ -19,7 +19,6 @@ class StatusChangeDetector(private val onChangeTimeout: Long = 10000,
     }
 
     fun startMonitoring() {
-        Log.i("STATUS","************************* START MONITORING ****************************************")
         handler.postDelayed(runnable, onChangeTimeout)
     }
 
@@ -40,7 +39,6 @@ class StatusChangeDetector(private val onChangeTimeout: Long = 10000,
     private fun executeFunction() {
         // Implement your desired functionality here
         // This function will be called if the variable hasn't changed its value in the specified timeout
-        Log.i("STATUS","************************ STOP MONITORING *****************************************")
         callback()
     }
 }

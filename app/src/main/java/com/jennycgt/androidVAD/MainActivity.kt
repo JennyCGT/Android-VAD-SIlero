@@ -4,7 +4,12 @@ import VadListener
 import VadSilero
 import android.Manifest
 import android.content.pm.PackageManager
+import android.media.MediaRecorder
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -40,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.io.File
+import java.io.IOException
 
 class MainActivity : ComponentActivity(), VoiceRecorder.AudioCallback {
 
@@ -52,7 +59,10 @@ class MainActivity : ComponentActivity(), VoiceRecorder.AudioCallback {
 
     private lateinit var vad: VadSilero
     var vadText = mutableStateOf("")
+    var isRecording = mutableStateOf(false)
+
     private lateinit var recorder: VoiceRecorder
+    private lateinit var statusChangeDetector: StatusChangeDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,7 +95,9 @@ class MainActivity : ComponentActivity(), VoiceRecorder.AudioCallback {
             .setSpeechDurationMs(DEFAULT_SPEECH_DURATION_MS)
             .build()
         recorder = VoiceRecorder(this)
-
+        statusChangeDetector = StatusChangeDetector {
+            executeFunction()
+        }
 
         setContent {
                 Column(
@@ -94,8 +106,15 @@ class MainActivity : ComponentActivity(), VoiceRecorder.AudioCallback {
                     verticalArrangement = Arrangement.Top
                 ) {
                     HomeScreen("VAD Android ", vadText.value,
-                        recorder,
-                        vad)
+                        isRecording.value,
+                        { isRecording.value = !it
+                            if(isRecording.value){
+                                startRecording()
+                            }else{
+                                stopRecording()
+                            }
+                        }
+                    )
                 }
 
         }
@@ -104,32 +123,45 @@ class MainActivity : ComponentActivity(), VoiceRecorder.AudioCallback {
             vad.setContinuousSpeechListener(audioData, object : VadListener {
             override fun onSpeechDetected() {
                 vadText.value = getString(R.string.speech)
+                statusChangeDetector.updateVariable("speech")
             }
 
             override fun onNoiseDetected() {
+                statusChangeDetector.updateVariable("noise")
                 vadText.value = getString(R.string.noise)
 
-//                this@MainActivity.runOnUiThread { speechTextView.setText(R.string.noise_detected) }
             }
         })
     }
+    private fun startRecording() {
+        recorder.start(vad.sampleRate.value, vad.frameSize.value)
+        statusChangeDetector.startMonitoring()
+        vadText.value = ""
+    }
+
+    private fun stopRecording() {
+        recorder.stop()
+        statusChangeDetector.stopMonitoring()
+
+    }
 
 
+    private fun executeFunction() {
+        // This function will be called if the variable hasn't changed its value in the specified timeout
+        stopRecording()
+        isRecording.value = false
+    }
 }
 
 @Composable
 fun HomeScreen(name: String,
                vadText:String,
-               recorder: VoiceRecorder,
-               vad:VadSilero,
+               isRecording: Boolean,
+               ChangeRecordStatus: (state:Boolean) -> Unit,
                modifier: Modifier= Modifier) {
-    var isRecording by remember {mutableStateOf(false)}
     var isPlaying by remember {mutableStateOf(false)}
-    if(isRecording){
-        recorder.start(vad.sampleRate.value, vad.frameSize.value)
-    }else{
-        recorder.stop()
-    }
+
+
 
     Box(modifier = Modifier.fillMaxWidth()
     ) {
@@ -148,7 +180,9 @@ fun HomeScreen(name: String,
     )
 
     Spacer(modifier = Modifier.height(20.dp))
-    ButtonIcon(state = isRecording, onclick = {if(!isPlaying){isRecording = !it}},
+    ButtonIcon(
+        state = isRecording,
+        onclick = {if(!isPlaying){ChangeRecordStatus(isRecording)}},
         resource1 = R.drawable.baseline_fiber_manual_record_24,
         resource2 = R.drawable.baseline_stop_circle_24,
         text1 = "Click to start Recording", text2 = "Recording ...")
@@ -219,8 +253,7 @@ fun ButtonIcon(
 //fun GreetingPreview() {
 //    VADAndroidTheme {
 //        HomeScreen("Android", vadText = "noise",
-//            VoiceRecorder(),
-//            vad = VadSilero(LocalContext)
-//            )
+//            Unit
+//        )
 //    }
 //}
