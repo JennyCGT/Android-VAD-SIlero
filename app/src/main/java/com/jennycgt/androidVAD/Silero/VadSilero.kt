@@ -1,13 +1,8 @@
-package com.jrtec.grabadora.Silero
-
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
 import ai.onnxruntime.OrtSession.SessionOptions
 import android.content.Context
-import com.jrtec.grabadora.Silero.config.FrameSize
-import com.jrtec.grabadora.Silero.config.Mode
-import com.jrtec.grabadora.Silero.config.SampleRate
 import java.nio.FloatBuffer
 import java.nio.LongBuffer
 import kotlin.reflect.cast

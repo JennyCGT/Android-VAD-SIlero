@@ -1,4 +1,3 @@
-package com.jrtec.grabadora.Silero.config
 
 enum class Mode(val value: Int) {
     OFF(0),

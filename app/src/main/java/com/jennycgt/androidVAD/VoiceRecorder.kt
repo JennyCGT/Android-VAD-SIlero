@@ -1,4 +1,4 @@
-package com.jrtec.grabadora
+package com.jennycgt.androidVAD
 
 import android.annotation.SuppressLint
 import android.media.*

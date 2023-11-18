@@ -1,4 +1,3 @@
-package com.jrtec.grabadora.Silero.config
 
 enum class FrameSize(val value: Int) {
     FRAME_SIZE_256(256),

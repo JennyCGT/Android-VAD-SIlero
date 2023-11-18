@@ -1,8 +1,6 @@
-package com.jrtec.grabadora.Silero
+import VadSilero
 import android.content.Context
-import com.jrtec.grabadora.Silero.config.FrameSize
-import com.jrtec.grabadora.Silero.config.Mode
-import com.jrtec.grabadora.Silero.config.SampleRate
+
 
 class Vad private constructor() {
     private lateinit var context: Context

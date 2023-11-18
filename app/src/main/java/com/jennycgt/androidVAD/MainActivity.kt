@@ -1,30 +1,23 @@
 package com.jennycgt.androidVAD
 
-import android.graphics.drawable.ColorDrawable
+import VadListener
+import VadSilero
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.ImageButton
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -39,35 +32,106 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jennycgt.androidVAD.ui.theme.VADAndroidTheme
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), VoiceRecorder.AudioCallback {
+
+    private val DEFAULT_SAMPLE_RATE = SampleRate.SAMPLE_RATE_16K
+    private val DEFAULT_FRAME_SIZE = FrameSize.FRAME_SIZE_512
+    private val DEFAULT_MODE = Mode.NORMAL
+    private val DEFAULT_SILENCE_DURATION_MS = 50
+    private val DEFAULT_SPEECH_DURATION_MS = 100
+
+
+    private lateinit var vad: VadSilero
+    var vadText = mutableStateOf("")
+    private lateinit var recorder: VoiceRecorder
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (ContextCompat.checkSelfPermission(
+                applicationContext,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                applicationContext, Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                applicationContext, Manifest.permission.READ_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.INTERNET,
+                ),
+                1000
+            )
+        }
+        vad = Vad.builder()
+            .setContext(this)
+            .setSampleRate(DEFAULT_SAMPLE_RATE)
+            .setFrameSize(DEFAULT_FRAME_SIZE)
+            .setMode(DEFAULT_MODE)
+            .setSilenceDurationMs(DEFAULT_SILENCE_DURATION_MS)
+            .setSpeechDurationMs(DEFAULT_SPEECH_DURATION_MS)
+            .build()
+        recorder = VoiceRecorder(this)
+
+
         setContent {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Top
                 ) {
-                    HomeScreen("VAD Android ")
+                    HomeScreen("VAD Android ", vadText.value,
+                        recorder,
+                        vad)
                 }
 
         }
     }
+    override fun onAudio(audioData: ShortArray) {
+            vad.setContinuousSpeechListener(audioData, object : VadListener {
+            override fun onSpeechDetected() {
+                vadText.value = getString(R.string.speech)
+            }
+
+            override fun onNoiseDetected() {
+                vadText.value = getString(R.string.noise)
+
+//                this@MainActivity.runOnUiThread { speechTextView.setText(R.string.noise_detected) }
+            }
+        })
+    }
+
+
 }
 
 @Composable
-fun HomeScreen(name: String, modifier: Modifier = Modifier) {
+fun HomeScreen(name: String,
+               vadText:String,
+               recorder: VoiceRecorder,
+               vad:VadSilero,
+               modifier: Modifier= Modifier) {
+    var isRecording by remember {mutableStateOf(false)}
+    var isPlaying by remember {mutableStateOf(false)}
+    if(isRecording){
+        recorder.start(vad.sampleRate.value, vad.frameSize.value)
+    }else{
+        recorder.stop()
+    }
+
     Box(modifier = Modifier.fillMaxWidth()
-//        .paint(
-//            painterResource(id = R.drawable.android),
-//        ),
     ) {
         Image(
             painter = painterResource(id = R.drawable.android),
@@ -82,9 +146,6 @@ fun HomeScreen(name: String, modifier: Modifier = Modifier) {
         modifier = modifier,
         fontSize = 25.sp
     )
-    var isRecording by remember {mutableStateOf(false)}
-    var isPlaying by remember {mutableStateOf(false)}
-    var vadText by remember {mutableStateOf("")}
 
     Spacer(modifier = Modifier.height(20.dp))
     ButtonIcon(state = isRecording, onclick = {if(!isPlaying){isRecording = !it}},
@@ -152,10 +213,14 @@ fun ButtonIcon(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    VADAndroidTheme {
-        HomeScreen("Android")
-    }
-}
+
+//@Preview(showBackground = true)
+//@Composable
+//fun GreetingPreview() {
+//    VADAndroidTheme {
+//        HomeScreen("Android", vadText = "noise",
+//            VoiceRecorder(),
+//            vad = VadSilero(LocalContext)
+//            )
+//    }
+//}
