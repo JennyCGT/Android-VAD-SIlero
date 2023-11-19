@@ -6,3 +6,6 @@ This code takes as a base of this repository that offers distinct models https:/
 
 The first button record and use VAD at the same time, also this functionality have a timeout if the VAD does not detect a human voice in 3 seconds the system stops the record.
 
+The record file is saved on a temporal file and the user can play it.
+
+![](https://github.com/JennyCGT/Android-VAD-SIlero/blob/main/video/Capture.gif))
